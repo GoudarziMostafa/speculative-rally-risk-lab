@@ -1,5 +1,7 @@
 # Speculative Rally Risk Lab
 
+[Open the live dashboard](https://goudarzimostafa.github.io/speculative-rally-risk-lab/)
+
 I built this to see how the same trade turns out when buying pressure fades, persists, or the rally gets more fragile. You can change the assumptions and compare shares, margin, and short-dated calls across 4,000 simulated paths per scenario.
 
 Try **Buying persists** and change **Days before buying starts to fade** from 15 to 5. With the default day-8 shares trade, the median goes from +15.4% to −19.5%. The assumptions are illustrative.
