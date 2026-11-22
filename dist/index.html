@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare the same trade across three simulated stock rallies and see how changing an assumption changes the risk.">
+  <title>Speculative Rally Risk Lab</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.mjs"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap topbar">
+      <span class="brand"><span class="brand-mark" aria-hidden="true">∿</span> Rally Risk Lab</span>
+      <a href="#method">How it works</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="intro" aria-labelledby="title">
+      <div>
+        <h1 id="title">Speculative Rally Risk Lab</h1>
+        <p>Try the same trade in three kinds of rallies. Change what you believe about buying pressure or break risk and see how your results move.</p>
+      </div>
+      <p class="sample-note"><span><strong>4,000</strong> paths per scenario</span><span>Illustrative assumptions</span></p>
+    </section>
+
+    <div class="lab">
+      <aside class="setup" aria-label="Simulation settings">
+        <section class="panel config" aria-labelledby="scenario-heading">
+          <h2 id="scenario-heading">Market scenario</h2>
+          <p class="muted">Choose a scenario to inspect or edit.</p>
+          <div id="scenarios" class="scenarios" role="group" aria-label="Inspect a scenario"></div>
+          <details id="assumptions">
+            <summary>Market assumptions</summary>
+            <div id="market-fields" class="fields"></div>
+            <p class="help" id="age-preview"></p>
+            <button id="reset-scenario" class="text-button" type="button">Restore preset</button>
+          </details>
+        </section>
+
+        <section class="panel config" aria-labelledby="trade-heading">
+          <h2 id="trade-heading">Your trade</h2>
+          <p class="muted">Applies to all three scenarios.</p>
+          <div id="trade-primary" class="fields"></div>
+          <label for="instrument">Instrument</label>
+          <div class="select-control"><select id="instrument"></select></div>
+          <details>
+            <summary>Trade settings</summary>
+            <div id="trade-fields" class="fields"></div>
+            <fieldset id="margin-fields" hidden><legend>Margin settings</legend></fieldset>
+            <fieldset id="call-fields" hidden>
+              <legend>Call settings</legend>
+              <label for="iv-mode">Entry implied volatility</label>
+              <div class="select-control">
+                <select id="iv-mode">
+                  <option value="matched">Match annualized stock volatility</option>
+                  <option value="manual">Set a fixed value</option>
+                </select>
+              </div>
+              <p id="entry-iv" class="help"></p>
+              <div id="manual-iv" class="fields" hidden></div>
+              <div id="call-sliders" class="fields"></div>
+            </fieldset>
+            <p class="help">Take-profit and trailing stops use the stock price. Zero turns either rule off.</p>
+          </details>
+        </section>
+      </aside>
+
+      <div class="results">
+        <section class="panel report" aria-labelledby="compare-heading">
+          <header class="section-heading">
+            <div>
+              <h2 id="compare-heading">Same trade, three scenarios</h2>
+              <p id="trade-context" class="muted"></p>
+            </div>
+          </header>
+          <div class="table-scroll">
+            <table class="comparison">
+              <thead><tr><th scope="col">Scenario</th><th scope="col">Median return</th><th scope="col">Loss chance</th><th scope="col">Portfolio P5</th></tr></thead>
+              <tbody id="comparison"></tbody>
+            </table>
+          </div>
+          <p class="help">Portfolio P5 is the 5th-percentile change to the whole portfolio, in percentage points. A 40% loss on a 5% allocation changes the portfolio by −2 points.</p>
+          <details id="mix-panel">
+            <summary>Blend scenarios</summary>
+            <p class="muted">Set your beliefs about the scenario at the selected entry day. Weights must add to 100%.</p>
+            <div id="weights" class="weight-fields"></div>
+            <p id="weight-status" class="help" aria-live="polite"></p>
+            <p id="mix-stats" class="mix-stats"></p>
+            <canvas id="mix-chart" class="chart histogram" role="img" hidden></canvas>
+          </details>
+        </section>
+
+        <section class="panel report" aria-labelledby="distribution-heading">
+          <header class="section-heading">
+            <div>
+              <h2 id="distribution-heading">Return distribution</h2>
+              <p id="distribution-context" class="muted"></p>
+            </div>
+          </header>
+          <div id="metrics" class="metrics"></div>
+          <label id="zoom-control" class="chart-toggle" hidden>
+            <input id="zoom-calls" type="checkbox"> Focus on returns from −80% onward
+          </label>
+          <p id="zoom-note" class="help" hidden></p>
+          <canvas id="histogram" class="chart histogram" role="img"></canvas>
+          <div id="histogram-legend" class="legend" aria-label="Histogram legend">
+            <span><i class="legend-loss"></i> Loss</span>
+            <span><i class="legend-gain"></i> Flat or gain</span>
+            <span><i class="legend-median"></i> Median</span>
+            <span><i class="legend-mean"></i> Mean</span>
+          </div>
+          <p id="tail-notes" class="help"></p>
+          <p id="sampling-note" class="help">At 4,000 paths, the sampling error for a scenario’s loss chance is up to about 0.8 percentage points per standard error.</p>
+        </section>
+
+        <section class="panel report" aria-labelledby="timing-heading">
+          <header class="section-heading">
+            <div>
+              <h2 id="timing-heading">When you enter</h2>
+              <p class="muted">Trade outcomes assume the rally is active at entry.</p>
+            </div>
+            <div class="select-control">
+              <select id="timing-metric" aria-label="Entry-day chart measure">
+                <option value="median">Median return</option>
+                <option value="loss">Loss chance</option>
+              </select>
+            </div>
+          </header>
+          <div class="timing-grid">
+            <figure>
+              <figcaption id="timing-label">Median trade return</figcaption>
+              <canvas id="timing-chart" class="chart small-chart" role="img"></canvas>
+              <p id="timing-note" class="help"></p>
+            </figure>
+            <figure>
+              <figcaption>Share of rallies without a break yet</figcaption>
+              <canvas id="survival-chart" class="chart small-chart" role="img"></canvas>
+              <p id="survival-note" class="help"></p>
+            </figure>
+          </div>
+        </section>
+
+        <section class="panel report" aria-labelledby="instruments-heading">
+          <header class="section-heading">
+            <div>
+              <h2 id="instruments-heading">Trade it a different way</h2>
+              <p id="instrument-context" class="muted"></p>
+            </div>
+          </header>
+          <div class="table-scroll">
+            <table class="comparison">
+              <thead><tr><th scope="col">Instrument</th><th scope="col">Median return</th><th scope="col">Loss chance</th><th scope="col">Trade P5</th></tr></thead>
+              <tbody id="instrument-comparison"></tbody>
+            </table>
+          </div>
+          <p id="instrument-notes" class="help"></p>
+        </section>
+
+        <section id="method" class="panel report method" aria-labelledby="method-heading">
+          <h2 id="method-heading">How it works</h2>
+          <details>
+            <summary>Simulation and execution</summary>
+            <p>Each trade starts with the stock price normalized to 1 and the rally still active. Rally age advances one trading day at a time. We reuse the same random shocks across scenarios and entry days.</p>
+            <p>A break applies one downside shock drawn from the range you choose. After that, the stock has an expected daily return of −2%. The survival chart uses the daily break probabilities from rally onset.</p>
+            <p>We check exits at daily prices. On a move of at least 25% in either direction, an eligible exit may get a price penalty. Margin can lose more than the committed equity when the first observed liquidation price is low. Calls use a Black–Scholes benchmark. Entry implied volatility defaults to each scenario’s annualized stock volatility. You can set a fixed value across scenarios, vary the call fee, and change implied volatility after a break for early exits. Expiring calls settle at intrinsic value.</p>
+          </details>
+          <details>
+            <summary>Research behind the scenarios</summary>
+            <p>Retail buying surges have been followed by reversals on average. A working paper on potential gamma squeezes reports continued gains in a sample selected for persistent hedging pressure. These studies motivate the different scenarios. The lab uses illustrative numbers.</p>
+            <p>For a real stock, observations such as short interest, float, borrow fees, and announced offerings can help you choose which assumptions to stress-test.</p>
+            <ul>
+              <li><a href="https://doi.org/10.1111/jofi.13183" target="_blank" rel="noopener">Barber et al., Attention-Induced Trading and Returns</a></li>
+              <li><a href="https://doi.org/10.2139/ssrn.5959235" target="_blank" rel="noopener">Zaynutdinova et al., Seeking Gamma</a></li>
+            </ul>
+          </details>
+        </section>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
